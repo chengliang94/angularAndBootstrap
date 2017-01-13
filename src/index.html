@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="health">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Carousel Template for Bootstrap</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="http://cdn.bootcss.com/html5shiv/3.7.0/html5shiv.js"></script>
+      <script src="http://cdn.bootcss.com/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+	<style type="text/css">
+		
+	</style>
+  </head>
+<!-- NAVBAR
+================================================== -->
+  <body>
+
+  	<ui-view></ui-view>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="./js/angular.js"></script>
+    <script type="text/javascript" src="./js/angular-ui-router.js"></script>
+    <script type="text/javascript">
+
+    	var healthApp =angular.module('health',['ui.router'])
+    	.run(function($rootScope, $state, $stateParams) {
+        $rootScope.foodPrefix = "http://tnfs.tngou.net/image";
+
+        $rootScope.$state = $state; //state是我们的状态，放到了$rootScope
+        $rootScope.$stateParams = $stateParams; // stateParams是我们的路由的参数
+        // stateChangeSuccess
+        $rootScope.$on("$stateChangeSuccess", function(event, toState, toParams, fromState, fromParams) {
+            // to be used for back button //won't work when page is reloaded.
+            $rootScope.previousState_name = fromState.name; //记录前一个路由的名称
+            $rootScope.previousState_params = fromParams; //记录前一个路由的参数
+        });
+        //back button function called from back button's ng-click="back()"
+        $rootScope.back = function(obj) {
+          //如果前一个路由的名称长度为0，就意味着没有前一个路由操作，我们就没有返回的路径
+          if($rootScope.previousState_name.trim().length != 0){
+            $state.go($rootScope.previousState_name, $rootScope.previousState_params);
+            
+          }else{
+            // alert('没有可返回的页面!');
+            $('#'+obj).popover('show');
+
+          }
+        };
+    })
+    	.config(function($stateProvider,$urlRouterProvider,$urlMatcherFactoryProvider){
+    		$urlRouterProvider.otherwise('/navbar/home');
+    		$urlMatcherFactoryProvider.caseInsensitive(true);
+    		$stateProvider
+    		.state('navbar',{
+    			url:'/navbar',
+    			templateUrl:'./template/navbar.html',
+    			controller:'navbarController'
+    		})
+    		.state('navbar.home',{
+    			url:'/home',
+    			templateUrl:'./template/home.html',
+    			controller:'homeController'
+    		})
+    		.state('navbar.foodList',{
+    			url:'/foodList/:id/:page',
+    			templateUrl:'./template/foodList.html',
+    			controller:'foodListController'
+    		})
+    		.state('navbar.foodDetail',{
+    			url:'/foodDetail/:id',
+    			templateUrl:'./template/foodDetail.html',
+    			controller:'foodDetailController'
+    		})
+    	})
+    	.controller('navbarController',function($scope,$http){
+    		$http({
+    			url:'http://localhost/store-categories.php'
+    		}).then(function(res){
+    			$scope.foodcategories = res.data.tngou;
+    			
+    		})
+    	})
+    	.controller('homeController',function($scope){
+    		$scope.welcome = "欢迎来到健康大杂汇";
+    	})
+    	.controller('foodListController',function($scope,$stateParams,$http){
+    		$http({
+    			url:'http://localhost/store-list.php',
+    			params:{
+    				id:$stateParams.id,
+    				page:$stateParams.page
+    			}
+    		}).then(function(res){
+    		
+    			$scope.foodList = res.data.list;
+    			
+    			var pageCountList = [];
+    			var rows = 9;
+
+    			for(var i=1;i<=Math.ceil(res.data.total/rows); i++){
+    				pageCountList.push(i);
+    			}
+    			$scope.id = $stateParams.id;
+    			$scope.pageLCountist = pageCountList;
+    		})
+    	})
+    	
+    	
+    	.controller("foodDetailController",function($scope,$http,$stateParams,$sce,$state){
+        $http({
+          url:'http://localhost/store-detail.php',
+          method:'get',
+          params:{
+            id:$stateParams.id
+          }
+        }).then(function(respones){
+           console.log(respones);
+          $scope.detail = respones.data;
+          $scope.detail.content = $sce.trustAsHtml(respones.data.description);
+          console.log(respones.data.list);
+        })
+
+  
+      })
+
+  
+    </script>
+
+  </body>
+</html>
